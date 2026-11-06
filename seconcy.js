@@ -13,8 +13,8 @@ const TAG = `[${SESSION_ID}]`
 // Carpeta donde se guarda la sesión de WhatsApp
 const AUTH_DIR =
   SESSION_ID === 'seconcy'
-    ? path.join(__dirname, '../infoSeconcy')
-    : path.join(__dirname, '../auth_info_' + SESSION_ID)
+    ? path.join(__dirname, 'infoSeconcy')
+    : path.join(__dirname, 'auth_info_' + SESSION_ID)
 // ======================================================
 // CARGAR COMANDOS
 // ======================================================
