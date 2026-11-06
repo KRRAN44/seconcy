@@ -15,6 +15,7 @@ const AUTH_DIR =
   SESSION_ID === 'seconcy'
     ? path.join(__dirname, 'infoSeconcy')
     : path.join(__dirname, 'auth_info_' + SESSION_ID)
+const MIEMBROS_PATH = path.join(__dirname, 'JSON', 'miembros.json')
 // ======================================================
 // CARGAR COMANDOS
 // ======================================================
@@ -79,6 +80,61 @@ function getMessageText(message) {
     content?.videoMessage?.caption ||
     ''
   )
+}
+
+function limpiarJidTelefono(jid) {
+  if (typeof jid !== 'string' || !jid.endsWith('@s.whatsapp.net')) return null
+  return jid.replace(/:\d+@/, '@')
+}
+
+async function guardarNuevosParticipantes(sock, update) {
+  const { id: jidGrupo, action, participants = [] } = update
+  if (!jidGrupo?.endsWith('@g.us') || action !== 'add') return
+
+  const nuevos = new Set()
+  const numeroBot = sock.user?.id?.split(':')[0].split('@')[0]
+
+  for (const participante of participants) {
+    const participantJid = typeof participante === 'string'
+      ? participante
+      : participante?.id || participante?.jid
+    let numero = limpiarJidTelefono(participante?.phoneNumber) || limpiarJidTelefono(participantJid)
+
+    if (!numero && participantJid?.endsWith('@lid')) {
+      try {
+        const telefono = await sock.signalRepository?.lidMapping?.getPNForLID(participantJid)
+        numero = limpiarJidTelefono(telefono)
+      } catch (error) {
+        console.error(`No se pudo resolver el número del participante ${participantJid}:`, error)
+      }
+    }
+
+    if (numero && numero.split('@')[0] !== numeroBot) nuevos.add(numero)
+  }
+
+  if (nuevos.size > 0) {
+    // Leer el archivo después de resolver posibles @lid para no sobrescribir
+    // una actualización que otro manejador haya guardado mientras tanto.
+    let miembros = {}
+    if (fs.existsSync(MIEMBROS_PATH)) {
+      const contenido = fs.readFileSync(MIEMBROS_PATH, 'utf8').trim()
+      if (contenido) {
+        miembros = JSON.parse(contenido)
+        if (!miembros || typeof miembros !== 'object' || Array.isArray(miembros)) {
+          throw new Error('La raíz de JSON/miembros.json debe ser un objeto')
+        }
+      }
+    }
+
+    const numeros = new Set(Array.isArray(miembros[jidGrupo]) ? miembros[jidGrupo] : [])
+    const antes = numeros.size
+    for (const numero of nuevos) numeros.add(numero)
+    const agregados = numeros.size - antes
+    if (agregados === 0) return
+    miembros[jidGrupo] = [...numeros]
+    fs.writeFileSync(MIEMBROS_PATH, JSON.stringify(miembros, null, 2), 'utf8')
+    console.log(`✅ Guardé ${agregados} participante(s) nuevo(s) de ${jidGrupo} en JSON/miembros.json`)
+  }
 }
 // ======================================================
 // ¿YA ESTÁ VINCULADO?
@@ -223,6 +279,11 @@ async function startBot(phoneNumber) {
   configurarAvisoInicial(sock)
   // Guardar credenciales
   sock.ev.on('creds.update', saveCreds)
+  sock.ev.on('group-participants.update', update => {
+    guardarNuevosParticipantes(sock, update).catch(error => {
+      console.error('❌ Error guardando nuevos participantes en miembros.json:', error)
+    })
+  })
   // Evitar pedir el pairing code varias veces
   let pairingRequested = false
   // ====================================================

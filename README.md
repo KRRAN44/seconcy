@@ -10,7 +10,7 @@ Instala dependencias con `npm install` y arranca con `node seconcy.js`. En el pr
 
 Los módulos se cargan recursivamente desde `plugg/` (y desde `commands/`, si existe). Cada módulo CommonJS exporta `name`, una función asíncrona `execute({ sock, message, jid, args, text, prefix, commands })` y opcionalmente `aliases`. El único prefijo aceptado es `#`. Los comandos actuales son `#agg888` y `#add888`, ambos orientados a grupos y con validación de administrador.
 
-`agg888` recoge números visibles de participantes y los guarda por grupo en `JSON/miembros.json`. `add888` lee esos números y gestiona altas por tandas; usa una pausa de dos minutos. Revisa cuidadosamente el destino y los permisos de WhatsApp antes de usarlo.
+`agg888` recoge números visibles de participantes y los guarda por grupo en `JSON/miembros.json`. Además, el evento de entrada a grupo guarda automáticamente a cada nuevo participante en la lista de ese grupo. Si WhatsApp entrega un identificador `@lid`, el bot intenta resolverlo a número; si no puede obtener el número, no puede guardar ese usuario como teléfono. `add888` lee esos números y gestiona altas por tandas; usa una pausa de dos minutos. Revisa cuidadosamente el destino y los permisos de WhatsApp antes de usarlo.
 
 ## Otras piezas
 
