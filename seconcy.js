@@ -4,7 +4,7 @@ const fs = require('fs')
 const path = require('path')
 const readline = require('readline/promises')
 const configurarAvisoInicial = require('./startup-notify')
-const PREFIX = '#'
+const PREFIX = '$'
 const logger = P({ level: 'silent' })
 
 
@@ -16,6 +16,11 @@ const AUTH_DIR =
     ? path.join(__dirname, 'infoSeconcy')
     : path.join(__dirname, 'auth_info_' + SESSION_ID)
 const MIEMBROS_PATH = path.join(__dirname, 'JSON', 'miembros.json')
+const PRE_MIEMBROS_PATH = path.join(__dirname, 'JSON', 'pre-miem.json')
+const INTERVALO_TRANSFERENCIA_MS = 4 * 60 * 1000
+const INTERVALO_REVISION_COLA_MS = 1000
+let transferenciaTimer = null
+let siguienteTransferencia = null
 // ======================================================
 // CARGAR COMANDOS
 // ======================================================
@@ -87,12 +92,97 @@ function limpiarJidTelefono(jid) {
   return jid.replace(/:\d+@/, '@')
 }
 
+function leerArchivoMiembros(ruta) {
+  if (!fs.existsSync(ruta)) return {}
+  const contenido = fs.readFileSync(ruta, 'utf8').trim()
+  if (!contenido) return {}
+  const datos = JSON.parse(contenido)
+  if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {
+    throw new Error(`La raíz de ${path.basename(ruta)} debe ser un objeto`)
+  }
+  return datos
+}
+
+function guardarArchivoMiembros(ruta, datos) {
+  const temporal = `${ruta}.${process.pid}.tmp`
+  fs.writeFileSync(temporal, JSON.stringify(datos, null, 2), 'utf8')
+  fs.renameSync(temporal, ruta)
+}
+
+function transferirUnNumero() {
+  try {
+    const preMiembros = leerArchivoMiembros(PRE_MIEMBROS_PATH)
+    const grupoOrigen = Object.keys(preMiembros).find(grupo =>
+      Array.isArray(preMiembros[grupo]) && preMiembros[grupo].length > 0
+    )
+    if (!grupoOrigen) return
+
+    const numero = limpiarJidTelefono(preMiembros[grupoOrigen][0])
+    preMiembros[grupoOrigen].shift()
+    if (!numero) {
+      guardarArchivoMiembros(PRE_MIEMBROS_PATH, preMiembros)
+      console.log('[Cola $4] Se descartó una entrada que no era un número telefónico válido.')
+      return
+    }
+
+    const miembros = leerArchivoMiembros(MIEMBROS_PATH)
+    const numerosGrupo = new Set(Array.isArray(miembros[grupoOrigen]) ? miembros[grupoOrigen] : [])
+    const yaEnCola = Object.values(miembros).some(lista =>
+      Array.isArray(lista) && lista.some(valor => limpiarJidTelefono(valor) === numero)
+    )
+    if (!yaEnCola) {
+      numerosGrupo.add(numero)
+      miembros[grupoOrigen] = [...numerosGrupo]
+      // Primero persistir el destino; si falla, la entrada sigue en pre-miem.json.
+      guardarArchivoMiembros(MIEMBROS_PATH, miembros)
+    }
+
+    guardarArchivoMiembros(PRE_MIEMBROS_PATH, preMiembros)
+    console.log(`[Cola $4] Pasé un número de pre-miem.json a miembros.json (${grupoOrigen}).`)
+  } catch (error) {
+    console.error('[Cola $4] No se pudo transferir el siguiente número:', error)
+  }
+}
+
+function iniciarTransferenciaMiembros() {
+  if (transferenciaTimer) return
+  transferenciaTimer = setInterval(() => {
+    const comando690 = commands.get('690')
+    const activa = Boolean(comando690?.isActive?.())
+
+    if (!activa) {
+      siguienteTransferencia = null
+      return
+    }
+
+    if (siguienteTransferencia === null) {
+      siguienteTransferencia = Date.now() + INTERVALO_TRANSFERENCIA_MS
+      console.log('[Cola $4] $690 está activo; transferiré un número dentro de cuatro minutos.')
+      return
+    }
+
+    if (Date.now() >= siguienteTransferencia) {
+      transferirUnNumero()
+      siguienteTransferencia = Date.now() + INTERVALO_TRANSFERENCIA_MS
+    }
+  }, INTERVALO_REVISION_COLA_MS)
+  console.log('[Cola $4] Temporizador listo; la cuenta atrás comienza al activar $690.')
+}
+
 async function guardarNuevosParticipantes(sock, update) {
   const { id: jidGrupo, action, participants = [] } = update
   if (!jidGrupo?.endsWith('@g.us') || action !== 'add') return
 
   const nuevos = new Set()
   const numeroBot = sock.user?.id?.split(':')[0].split('@')[0]
+
+  // No volver a encolar participantes que el propio bot acaba de añadir con $690.
+  const autor = update.author || ''
+  const autorTelefono = update.authorPn || ''
+  if (
+    autor.split(':')[0].split('@')[0] === numeroBot ||
+    autorTelefono.split(':')[0].split('@')[0] === numeroBot
+  ) return
 
   for (const participante of participants) {
     const participantJid = typeof participante === 'string'
@@ -113,27 +203,18 @@ async function guardarNuevosParticipantes(sock, update) {
   }
 
   if (nuevos.size > 0) {
-    // Leer el archivo después de resolver posibles @lid para no sobrescribir
-    // una actualización que otro manejador haya guardado mientras tanto.
-    let miembros = {}
-    if (fs.existsSync(MIEMBROS_PATH)) {
-      const contenido = fs.readFileSync(MIEMBROS_PATH, 'utf8').trim()
-      if (contenido) {
-        miembros = JSON.parse(contenido)
-        if (!miembros || typeof miembros !== 'object' || Array.isArray(miembros)) {
-          throw new Error('La raíz de JSON/miembros.json debe ser un objeto')
-        }
-      }
-    }
-
-    const numeros = new Set(Array.isArray(miembros[jidGrupo]) ? miembros[jidGrupo] : [])
+    // Los participantes nuevos también entran a la cola de cuatro minutos.
+    const preMiembros = leerArchivoMiembros(PRE_MIEMBROS_PATH)
+    const numeros = new Set(Array.isArray(preMiembros[jidGrupo]) ? preMiembros[jidGrupo] : [])
     const antes = numeros.size
     for (const numero of nuevos) numeros.add(numero)
     const agregados = numeros.size - antes
     if (agregados === 0) return
-    miembros[jidGrupo] = [...numeros]
-    fs.writeFileSync(MIEMBROS_PATH, JSON.stringify(miembros, null, 2), 'utf8')
-    console.log(`✅ Guardé ${agregados} participante(s) nuevo(s) de ${jidGrupo} en JSON/miembros.json`)
+    preMiembros[jidGrupo] = [...numeros]
+    guardarArchivoMiembros(PRE_MIEMBROS_PATH, preMiembros)
+    console.log(`✅ Encolé ${agregados} participante(s) nuevo(s) de ${jidGrupo} en JSON/pre-miem.json`)
+  } else if (participants.length > 0) {
+    console.log(`[Cola $4] Se detectó una entrada en ${jidGrupo}, pero WhatsApp no proporcionó un número telefónico resoluble.`)
   }
 }
 // ======================================================
@@ -281,7 +362,7 @@ async function startBot(phoneNumber) {
   sock.ev.on('creds.update', saveCreds)
   sock.ev.on('group-participants.update', update => {
     guardarNuevosParticipantes(sock, update).catch(error => {
-      console.error('❌ Error guardando nuevos participantes en miembros.json:', error)
+      console.error('❌ Error encolando nuevos participantes en pre-miem.json:', error)
     })
   })
   // Evitar pedir el pairing code varias veces
@@ -340,6 +421,7 @@ async function startBot(phoneNumber) {
         console.log(
           `✅ ${TAG} Bot conectado a WhatsApp.`
         )
+        iniciarTransferenciaMiembros()
       }
       // ------------------------------------------------
       // CONEXIÓN CERRADA
@@ -414,10 +496,13 @@ async function startBot(phoneNumber) {
       const commandText =
         text.slice(PREFIX.length).trim()
       if (!commandText) continue
+      // Permite comandos de control como $690!! sin tratarlos como
+      // un nombre de comando diferente ("690!!").
       const commandName =
         commandText
           .split(/\s+/)[0]
-          ?.toLowerCase()
+          ?.replace(/!!$/, '')
+          .toLowerCase()
       const args =
         commandText
           .slice(commandName.length)

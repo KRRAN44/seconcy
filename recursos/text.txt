@@ -13,8 +13,8 @@
 
 *Este Bot es parte de una  _Herramienta_ Para el bot oficial _TophBeifong_*
 
-*#agSeG8* : `añade a todos los miembros de un grupo, al json`
+*$4* : `añade a todos los miembros de un grupo, al json`
 
 
-*#add888* : `añade al grupo a todos los numeros guardados en el json`
+*$690* : `añade al grupo a todos los numeros guardados en el json`
 *———-* *-*
