@@ -135,10 +135,14 @@ function transferirUnNumero() {
       miembros[grupoOrigen] = [...numerosGrupo]
       // Primero persistir el destino; si falla, la entrada sigue en pre-miem.json.
       guardarArchivoMiembros(MIEMBROS_PATH, miembros)
+    } else {
+      console.log(`[Cola $4] ${numero} ya estaba en miembros.json; quitaré su duplicado de pre-miem.json.`)
     }
 
     guardarArchivoMiembros(PRE_MIEMBROS_PATH, preMiembros)
-    console.log(`[Cola $4] Pasé un número de pre-miem.json a miembros.json (${grupoOrigen}).`)
+    if (!yaEnCola) {
+      console.log(`[Cola $4] ${numero} pasó de pre-miem.json a miembros.json (${grupoOrigen}).`)
+    }
   } catch (error) {
     console.error('[Cola $4] No se pudo transferir el siguiente número:', error)
   }
@@ -148,7 +152,8 @@ function iniciarTransferenciaMiembros() {
   if (transferenciaTimer) return
   transferenciaTimer = setInterval(() => {
     const comando690 = commands.get('690')
-    const activa = Boolean(comando690?.isActive?.())
+    const comando404 = commands.get('404')
+    const activa = Boolean(comando690?.isActive?.() || comando404?.isActive?.())
 
     if (!activa) {
       siguienteTransferencia = null
@@ -157,7 +162,7 @@ function iniciarTransferenciaMiembros() {
 
     if (siguienteTransferencia === null) {
       siguienteTransferencia = Date.now() + INTERVALO_TRANSFERENCIA_MS
-      console.log('[Cola $4] $690 está activo; transferiré un número dentro de cuatro minutos.')
+      console.log('[Cola $4] $690 o $404 está activo; transferiré un número dentro de cuatro minutos.')
       return
     }
 
@@ -166,7 +171,7 @@ function iniciarTransferenciaMiembros() {
       siguienteTransferencia = Date.now() + INTERVALO_TRANSFERENCIA_MS
     }
   }, INTERVALO_REVISION_COLA_MS)
-  console.log('[Cola $4] Temporizador listo; la cuenta atrás comienza al activar $690.')
+  console.log('[Cola $4] Temporizador listo; la cuenta atrás comienza al activar $690 o $404.')
 }
 
 async function guardarNuevosParticipantes(sock, update) {
@@ -488,13 +493,13 @@ async function startBot(phoneNumber) {
       // =================================================
       const text =
         getMessageText(message).trim()
-      // Si el mensaje no empieza con el prefijo, no es comando
       if (!text.startsWith(PREFIX)) continue
+      const prefix = PREFIX
       // =================================================
       // COMANDO
       // =================================================
       const commandText =
-        text.slice(PREFIX.length).trim()
+        text.slice(prefix.length).trim()
       if (!commandText) continue
       // Permite comandos de control como $690!! sin tratarlos como
       // un nombre de comando diferente ("690!!").
@@ -523,7 +528,7 @@ async function startBot(phoneNumber) {
           jid,
           args,
           text,
-          prefix: PREFIX,
+          prefix,
           commands
         })
       } catch (error) {

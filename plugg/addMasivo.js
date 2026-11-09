@@ -97,6 +97,9 @@ module.exports = {
         if (monitores.size > 0) {
             return sock.sendMessage(jid, { text: '690 ya está activado en otro grupo; detén ese proceso antes de activarlo aquí.' })
         }
+        if (require('./404').hasProcess()) {
+            return sock.sendMessage(jid, { text: '$404 está activado; deténlo antes de iniciar $690.' })
+        }
 
         try {
             await validarPermisos(sock, jid, message)
@@ -171,5 +174,9 @@ module.exports = {
 
     isActive() {
         return [...monitores.values()].some(monitor => !monitor.detener)
+    },
+
+    hasProcess() {
+        return monitores.size > 0
     }
 }
