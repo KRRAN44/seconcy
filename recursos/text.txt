@@ -9,12 +9,14 @@
     _*Bot WhatsApp*_
 > `Recolector de miembros`
 > `Parásito en grupos`
-> `Con #agg888: añade los miembros existentes`
+> `Envia enlace de tu grupo a usuarios`
 
 *Este Bot es parte de una  _Herramienta_ Para el bot oficial _TophBeifong_*
 
 *$4* : `añade a todos los miembros de un grupo, al json`
 
+*$480* : `Inicia comandos`
+*$ST480* : `Detiene comandos`
 
-*$690* : `añade al grupo a todos los numeros guardados en el json`
+*$cat* : `Muestra almacenamiento del json`
 *———-* *-*

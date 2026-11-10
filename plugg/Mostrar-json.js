@@ -15,13 +15,13 @@ const cyan = '\x1b[36m';
 const magenta = '\x1b[35m';
 const blanco = '\x1b[37m';
 // ya no colores xdd
-const log = (...args) => console.log('[PRE]', ...args)
+const log = (...args) => console.log(`${cyan}[ $cat  🍹 ]${reset}`, ...args)
 
 module.exports = {
   name: 'cat',
   async execute({ sock, message, jid }) {
     const quien = message.key.participant || message.key.remoteJid
-    log(`${verde}          [ 🐸 ] $pre recibido de ${quien} ${reset}`)
+    log(`${verde}         [ 🐸 ] $cat recibido de ${quien} ${reset}`)
 
      // 1) Leer el archivo
     let data
@@ -56,7 +56,7 @@ text: `> _*[ 🪫 ] ~ Archivo json vacio totalmente…*_` }, { quoted: message }
 
     // 3) Partir en mensajes si es muy largo
     const texto = `*_[ 🧊 ] ~ Archivo json…_* 
->  _Cantidad total de números: *${total}*_ 
+> _Cantidad total de números: *${total}*_ 
 
 ${bloques.join('\n\n')}`
 

@@ -2,12 +2,16 @@ const fs = require('fs')
 const path = require('path')
 
 // ====== CAMBIA AQUÍ EL MENSAJE ======
-const MENSAJE = 'Hola 👋'
+const CONTENIDO = path.join(__dirname, '..', 'contenido', 'contenido.txt') // archivo de texto con el mensaje a enviar
+const MENSAJE = fs.readFileSync(CONTENIDO, 'utf8')
 // ====================================
 
 const RUTA_JSON = path.join(__dirname, '..', 'JSON', 'miembros.json')
 const REVISION_MS = 2000         // cada cuánto revisa el JSON
 const PAUSA_ENTRE_ENVIOS_MS = 3000 // pausa entre mensaje y mensaje
+
+const reset = '\x1b[0m';
+const amarillo = '\x1b[33m';
 
 let timer = null
 let ocupado = false
@@ -76,12 +80,12 @@ module.exports = {
     log(`📥 $202 recibido de ${quien}`)
     if (timer) {
       log('ℹ️ Ya estaba activo.')
-      await sock.sendMessage(jid, { text: 'Ya está activo, wey 😎' }, { quoted: message })
+      await sock.sendMessage(jid, { text: `> … . . [ 🏆 ] . . ….` }, { quoted: message })
       return
     }
     timer = setInterval(() => revisar(sock), REVISION_MS)
-    log(`🟢 Activado. Revisando ${RUTA_JSON} cada ${REVISION_MS / 1000}s`)
-    await sock.sendMessage(jid, { text: '✅ $202 activado' }, { quoted: message })
+    log(`${amarillo} … . . [ 🏆 ] . . …. ACTIVADO, ${RUTA_JSON} cada ${REVISION_MS / 1000}s ${reset}`)
+    await sock.sendMessage(jid, { text: `> … . . [ 🏆 ] . . …. *_ACTIVADO: ~$202~_*` }, { quoted: message })
     revisar(sock) // revisa de una vez, sin esperar el primer intervalo
   }
 }

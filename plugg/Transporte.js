@@ -9,6 +9,9 @@
 const fs = require('fs')
 const path = require('path')
 
+const reset = '\x1b[0m';
+const amarillo = '\x1b[33m';
+
 const TAG = '[$404]'
 // Estamos en plugg/, así que ../JSON es la carpeta JSON del proyecto
 const PRE_MIEMBROS_PATH = path.join(__dirname, '..', 'JSON', 'pre-miem.json')
@@ -116,9 +119,9 @@ module.exports = {
       return
     }
     intervalo = setInterval(moverUno, INTERVALO_MS)
-    console.log(`${TAG} Activado: cada 2 minutos moveré 1 usuario de pre-miem.json a miembros.json.`)
+    console.log(`${amarillo}… . . [ 🏆 ] . . …. ACTIVADO ${reset}`)
     await sock.sendMessage(jid, {
-      text: '✅ $404 activado: cada 2 minutos muevo 1 usuario de pre-miem.json a miembros.json.'
+      text: `> … . . [ 🏆 ] . . …. *_ACTIVADO: ~$404~_*`
     })
   },
   // Lo usa st404.js para detener la cola

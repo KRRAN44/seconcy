@@ -96,16 +96,20 @@ module.exports = {
             }
 
             const lineas = [
-                `> 📋 Números encontrados en el grupo: *${numeros.size}*`,
-                `> ✅ Guardados nuevos en pre-miem.json: *${nuevos}*`,
-                `> ➖ Ya estaban guardados: *${numeros.size - nuevos}*`
+                `> [ 🌊 ] . . Total de *Miembros* en el grupo: _*${numeros.size}*_`,
+                `——- ——- — - `,
+                `> [ 🌊 ] . . Total de *Numeros* guardados en el archivo *json*: _*${nuevos}*_`,
+                `————- ——- — -`,
+                `> [ 🌊 ] . . Números que ya *estaban guardados* en el json: _*${numeros.size - nuevos}*_`
             ]
-            if (sinNumero > 0) lineas.push(`> ❔ Sin número (no pude resolverlo): *${sinNumero}*`)
+            if (sinNumero > 0) lineas.push(`————- —- —————-
+> [ 🌊 ] . . Cuentas con número *privado*: _*${sinNumero}*_
+                `)
 
             console.log(`Comando $4 ${proceso.detener ? 'detenido' : 'terminado'} para ${jid}; guardados nuevos: ${nuevos}`)
             const jidBot = sock.user?.id?.replace(/:\d+@/, '@')
             await sock.sendMessage(jidBot || jid, {
-                text: armarMensaje(`> _${proceso.detener ? '$4 detenido' : 'terminé con $4'}_\n${lineas.join('\n')}`)
+                text: armarMensaje(` _${proceso.detener ? '$4 detenido' : `            *_[ 🥂 ] $4_*`}_\n${lineas.join('\n')}`)
             })
         } catch (error) {
             console.error('Error recopilando o guardando participantes con $4:', error)
