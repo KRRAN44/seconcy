@@ -18,5 +18,9 @@
 *$480* : `Inicia comandos`
 *$ST480* : `Detiene comandos`
 
+*$change (XXX)* : `Cambia el texto que se enviara`
 *$cat* : `Muestra almacenamiento del json`
+
+*$aggbot (link)* : `El bot entra al grupo`
+*$exit (link)* : `El bot sale del grupo`
 *———-* *-*
