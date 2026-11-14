@@ -6,6 +6,7 @@
 // Se apaga con $ST480 (plugg/ST-Arrancar.js).
 // ======================================================
 const { leerActividad, actualizarActividad } = require('../actividad')
+const { consola } = require('../decoracion')
 
 // Para que reanudar() corra una sola vez por proceso: seconcy.js vuelve a
 // llamar a startBot en cada reconexión, y $404 sigue vivo entre reconexiones.
@@ -17,20 +18,20 @@ module.exports = {
     const { commands, message } = ctx
     // En una reanudación automática no hay mensaje, por eso el ?.
     const quien = message?.key?.participant || message?.key?.remoteJid || 'reinicio automático'
-    console.log(`[480] 📥 $480 recibido de ${quien}`)
+    consola('$480', `recibido de ${quien}`)
 
     for (const nombre of ['202', '404']) {
       const cmd = commands.get(nombre)
       if (!cmd) {
-        console.log(`[480] ⚠️ No encontré el comando $${nombre}`)
+        consola('$480', `no se encontró $${nombre}`, false)
         continue
       }
-      console.log(`[480] ▶️ Ejecutando $${nombre}...`)
+      consola('$480', `iniciando $${nombre}`)
       try {
         await cmd.execute(ctx)
-        console.log(`[480] ✅ $${nombre} ejecutado`)
+        consola(`$${nombre}`, 'ejecutado')
       } catch (error) {
-        console.log(`[480] ❌ Error en $${nombre}: ${error.message}`)
+        consola(`$${nombre}`, error.message, false)
       }
     }
 
@@ -42,9 +43,9 @@ module.exports = {
         jid: ctx.jid,
         activadoEn: new Date().toISOString()
       }))
-      console.log('[480] 💾 actividad.json guardado (activo: true)')
+      consola('$480', 'actividad.json guardado; activo')
     } catch (error) {
-      console.log(`[480] ❌ No se pudo guardar actividad.json: ${error.message}`)
+      consola('$480', `no se pudo guardar actividad.json: ${error.message}`, false)
     }
   },
 
@@ -53,11 +54,11 @@ module.exports = {
     if (yaReanudado) return
     const actividad = leerActividad()
     if (!actividad.activo || !actividad.jid) {
-      console.log('[480] 💤 actividad.json no tiene nada activo; no hay que reanudar.')
+      consola('$480', 'sin actividad pendiente')
       return
     }
     yaReanudado = true
-    console.log(`[480] 🔁 actividad.json dice activo: reanudando $480 en ${actividad.jid}`)
+    consola('$480', `reanuda en ${actividad.jid}`)
     await module.exports.execute({
       sock,
       commands,

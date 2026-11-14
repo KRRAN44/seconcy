@@ -3,15 +3,7 @@ const path = require('path')
 
 const miembrosPath = path.join(__dirname, '../JSON/pre-miem.json')
 const procesos = new Map()
-
-function armarMensaje(texto) {
-    return `╭─────────────╮
-          _*Seconcy $ ~V1~ 🌱🐸*_
-╰─────────────╯
-        *————————*
-
-${texto}`
-}
+const { consola, whatsapp } = require('../decoracion')
 
 function limpiarNumero(jid) {
     if (typeof jid !== 'string' || !jid.endsWith('@s.whatsapp.net')) return null
@@ -36,19 +28,19 @@ module.exports = {
     async execute({ sock, jid, text = '' }) {
         if (!jid?.endsWith('@g.us')) {
             return sock.sendMessage(jid, {
-                text: '> *_[ 🍤 ] ERROR! Este comando fue hecho para usarse en grupos..._*'
+                text: whatsapp('🍒', 'Este comando solo funciona en grupos')
             })
         }
 
         if (/^\$?ST4$/i.test(String(text).trim())) {
             const proceso = procesos.get(jid)
-            if (!proceso) return sock.sendMessage(jid, { text: '$4 no está recopilando miembros en este grupo.' })
+            if (!proceso) return sock.sendMessage(jid, { text: whatsapp('🍒', '$4 no está activo en este grupo') })
             proceso.detener = true
-            return sock.sendMessage(jid, { text: '$4 se detendrá y guardará los números que ya alcanzó a recopilar.' })
+            return sock.sendMessage(jid, { text: whatsapp('🎫', '$4 se detendrá y guardará los números recopilados') })
         }
 
         if (procesos.has(jid)) {
-            return sock.sendMessage(jid, { text: '$4 ya está recopilando miembros en este grupo.' })
+            return sock.sendMessage(jid, { text: whatsapp('🍒', '$4 ya está recopilando miembros') })
         }
 
         const proceso = { detener: false }
@@ -72,7 +64,7 @@ module.exports = {
                         const telefono = await sock.signalRepository?.lidMapping?.getPNForLID(participante.id)
                         numero = limpiarNumero(telefono)
                     } catch (error) {
-                        console.error(`No se pudo resolver el LID ${participante.id}:`, error)
+                        consola('$4', `no se pudo resolver un participante: ${error.message}`, false)
                     }
                 }
 
@@ -81,7 +73,7 @@ module.exports = {
             }
             if (numeros.size === 0 && !proceso.detener) {
                 return await sock.sendMessage(jid, {
-                    text: '> *_[ 🍤 ] ERROR! No encontré números de teléfono en este grupo..._*'
+                    text: whatsapp('🍒', 'No encontré números de teléfono en el grupo')
                 })
             }
 
@@ -96,25 +88,23 @@ module.exports = {
             }
 
             const lineas = [
-                `> [ 🌊 ] . . Total de *Miembros* en el grupo: _*${numeros.size}*_`,
+                whatsapp('🌊', `${numeros.size} miembros encontrados`),
                 `——- ——- — - `,
-                `> [ 🌊 ] . . Total de *Numeros* guardados en el archivo *json*: _*${nuevos}*_`,
+                whatsapp('🎫', `${nuevos} números nuevos guardados`),
                 `————- ——- — -`,
-                `> [ 🌊 ] . . Números que ya *estaban guardados* en el json: _*${numeros.size - nuevos}*_`
+                whatsapp('🥥', `${numeros.size - nuevos} números ya estaban guardados`)
             ]
-            if (sinNumero > 0) lineas.push(`————- —- —————-
-> [ 🌊 ] . . Cuentas con número *privado*: _*${sinNumero}*_
-                `)
+            if (sinNumero > 0) lineas.push(whatsapp('🍒', `${sinNumero} cuentas sin número visible`))
 
-            console.log(`Comando $4 ${proceso.detener ? 'detenido' : 'terminado'} para ${jid}; guardados nuevos: ${nuevos}`)
+            consola('$4', `${proceso.detener ? 'detenido' : 'terminado'}; ${numeros.size} números, ${nuevos} nuevos`)
             const jidBot = sock.user?.id?.replace(/:\d+@/, '@')
             await sock.sendMessage(jidBot || jid, {
-                text: armarMensaje(` _${proceso.detener ? '$4 detenido' : `            *_[ 🥂 ] $4_*`}_\n${lineas.join('\n')}`)
+                text: `${whatsapp('🎍', `$4 ${proceso.detener ? 'detenido' : 'completado'}; ${numeros.size} números`)}\n${lineas.join('\n')}`
             })
         } catch (error) {
-            console.error('Error recopilando o guardando participantes con $4:', error)
+            consola('$4', `no se pudo leer o guardar participantes: ${error.message}`, false)
             await sock.sendMessage(jid, {
-                text: '> *_[ 🍤 ] ERROR! No pude leer el grupo o guardar pre-miem.json..._*'
+                text: whatsapp('🍒', 'No pude leer el grupo o guardar pre-miem.json')
             })
         } finally {
             if (procesos.get(jid) === proceso) procesos.delete(jid)

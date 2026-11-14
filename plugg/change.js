@@ -9,6 +9,7 @@ const fs = require('fs')
 const path = require('path')
 
 const CONTENIDO = path.join(__dirname, '..', 'contenido', 'contenido.txt')
+const { consola, whatsapp } = require('../decoracion')
 
 // Quita envolturas (mensajes temporales, ver una vez, etc.)
 function desenvolver(content) {
@@ -49,15 +50,15 @@ module.exports = {
   name: 'change',
   async execute({ sock, message, jid, args }) {
     const quien = message?.key?.participant || message?.key?.remoteJid
-    console.log(`[change] 📥 $change recibido de ${quien}`)
+    consola('$change', `recibido de ${quien}`)
 
     // Prioridad: lo que escribes después de $change; si no hay, el mensaje citado
     const nuevo = (args || '').trim() || textoCitado(message).trim()
 
     if (!nuevo) {
-      console.log('[change] ⚠️ No había texto ni mensaje citado.')
+      consola('$change', 'falta el texto', false)
       await sock.sendMessage(jid, {
-        text: '> Escribe el texto: *$change tu mensaje*\n> o responde a un mensaje con *$change*'
+        text: whatsapp('🌊', 'Usa $change texto o responde a un mensaje con $change')
       }, { quoted: message })
       return
     }
@@ -65,14 +66,14 @@ module.exports = {
     try {
       fs.writeFileSync(CONTENIDO, nuevo, 'utf8')
     } catch (error) {
-      console.log(`[change] ❌ No pude escribir contenido.txt: ${error.message}`)
-      await sock.sendMessage(jid, { text: '❌ No pude guardar el contenido.' }, { quoted: message })
+      consola('$change', `no se pudo escribir contenido.txt: ${error.message}`, false)
+      await sock.sendMessage(jid, { text: whatsapp('🍒', 'No pude guardar el contenido') }, { quoted: message })
       return
     }
 
-    console.log(`[change] ✅ contenido.txt reemplazado (${nuevo.length} caracteres)`)
+    consola('$change', `contenido actualizado; ${nuevo.length} caracteres`)
     await sock.sendMessage(jid, {
-      text: `> _*[ 🐲 ] . . CONTENIDO CAMBIADO (${nuevo.length} caracteres)*_`
+      text: whatsapp('🐲', `Contenido cambiado; ${nuevo.length} caracteres`)
     }, { quoted: message })
   }
 }

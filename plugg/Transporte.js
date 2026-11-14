@@ -9,15 +9,18 @@
 const fs = require('fs')
 const path = require('path')
 
-const reset = '\x1b[0m';
-const amarillo = '\x1b[33m';
-
-const TAG = '[$404]'
 // Estamos en plugg/, así que ../JSON es la carpeta JSON del proyecto
 const PRE_MIEMBROS_PATH = path.join(__dirname, '..', 'JSON', 'pre-miem.json')
 const MIEMBROS_PATH = path.join(__dirname, '..', 'JSON', 'miembros.json')
 const INTERVALO_MS = 2 * 60 * 1000
 const ESPERA_ANTES_DE_QUITAR_MS = 5 * 1000
+const { consola, whatsapp } = require('../decoracion')
+
+function estimarCola(datos) {
+  const total = Object.values(datos).reduce((n, lista) => n + (Array.isArray(lista) ? lista.length : 0), 0)
+  const minutos = total * INTERVALO_MS / 60000
+  return { total, minutos }
+}
 
 let intervalo = null
 
@@ -47,9 +50,9 @@ function quitarDeMiembros(grupo, usuario) {
     miembros[grupo] = miembros[grupo].filter(n => n !== usuario)
     if (miembros[grupo].length === antes) return
     guardarJSON(MIEMBROS_PATH, miembros)
-    console.log(`${TAG} ${usuario} salió de miembros.json (${grupo}).`)
+    consola('$404', `${usuario} salió de miembros.json; ${grupo}`)
   } catch (error) {
-    console.error(`${TAG} No se pudo quitar ${usuario} de miembros.json:`, error)
+    consola('$404', `no se pudo quitar ${usuario} de miembros.json: ${error.message}`, false)
   }
 }
 
@@ -61,14 +64,14 @@ function moverUno() {
       Array.isArray(preMiembros[g]) && preMiembros[g].length > 0
     )
     if (!grupo) {
-      console.log(`${TAG} pre-miem.json está vacío; no hay nadie que mover.`)
+      consola('$404', 'cola vacía; nada que mover')
       return
     }
     // Paso 1: sacar al primero de la lista (todavía solo en memoria)
     const usuario = preMiembros[grupo].shift()
     if (typeof usuario !== 'string' || !usuario.trim()) {
       guardarJSON(PRE_MIEMBROS_PATH, preMiembros)
-      console.log(`${TAG} Descarté una entrada inválida de pre-miem.json (${grupo}).`)
+      consola('$404', `entrada inválida descartada; ${grupo}`, false)
       return
     }
     const miembros = leerJSON(MIEMBROS_PATH)
@@ -87,12 +90,12 @@ function moverUno() {
     guardarJSON(PRE_MIEMBROS_PATH, preMiembros)
     if (yaEstaba) {
       // Ya era miembro de verdad: no lo borramos de miembros.json para no quitarle su lugar
-      console.log(`${TAG} ${usuario} ya estaba en miembros.json (${grupo}); solo lo quité de pre-miem.json.`)
+      consola('$404', `${usuario} ya estaba registrado; duplicado retirado`)
       return
     }
-    console.log(`${TAG} ${usuario} pasó de pre-miem.json a miembros.json (${grupo}).`)
+    consola('$404', `${usuario} pasó a miembros.json; ${grupo}`)
   } catch (error) {
-    console.error(`${TAG} Error moviendo un usuario:`, error)
+    consola('$404', `error al mover número: ${error.message}`, false)
   }
 }
 
@@ -101,14 +104,16 @@ module.exports = {
   async execute({ sock, jid }) {
     if (intervalo) {
       await sock.sendMessage(jid, {
-        text: '⚠️ $404 ya está activo. Para detenerlo usa $ST404.'
+        text: whatsapp('🍒', '$404 ya está activo; usa $ST404 para detenerlo')
       })
       return
     }
     intervalo = setInterval(moverUno, INTERVALO_MS)
-    console.log(`${amarillo}… . . [ 🏆 ] . . …. ACTIVADO ${reset}`)
+    const cola = estimarCola(leerJSON(PRE_MIEMBROS_PATH))
+    const estimado = cola.minutos < 60 ? `${cola.minutos} min` : `${Math.floor(cola.minutos / 60)} h ${cola.minutos % 60} min`
+    consola('$404', `activo; ${cola.total} números, aprox. ${estimado}`)
     await sock.sendMessage(jid, {
-      text: `> … . . [ 🏆 ] . . …. *_ACTIVADO: ~$404~_*`
+      text: whatsapp('🛰️', `Transporte activo; ${cola.total} números, aprox. ${estimado}`)
     })
   },
   // Lo usa st404.js para detener la cola
@@ -116,7 +121,7 @@ module.exports = {
     if (!intervalo) return false
     clearInterval(intervalo)
     intervalo = null
-    console.log(`${TAG} Detenido con $ST404.`)
+    consola('$ST404', 'cola detenida')
     return true
   }
 }

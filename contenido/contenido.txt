@@ -1,1 +1,1 @@
-> _*[ 🐲 ] . . CONTENIDO CAMBIADO (50 caracteres)*_
+usa $change XXXX para cambiar el texto (la imagen no se enviara)

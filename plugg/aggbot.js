@@ -1,4 +1,4 @@
-const log = (...args) => console.log('[AGGBOT]', ...args)
+const { consola, whatsapp } = require('../decoracion')
 
 // Saca el texto del mensaje (normal, respuesta o pie de foto)
 function obtenerTexto(message) {
@@ -20,7 +20,7 @@ module.exports = {
 
     // Solo acepta links de grupos de WhatsApp
     if (!match) {
-      await sock.sendMessage(jid, { text: '⚠️ Mándame un link de grupo de WhatsApp: *$aggbot https://chat.whatsapp.com/xxxx*' }, { quoted: message })
+      await sock.sendMessage(jid, { text: whatsapp('🌊', 'Envía un enlace de grupo con $aggbot') }, { quoted: message })
       return
     }
 
@@ -29,16 +29,16 @@ module.exports = {
     try {
       // Saca el nombre del grupo con el código del link
       const info = await sock.groupGetInviteInfo(codigo)
-      log(`🔎 Grupo detectado: ${info.subject} (${info.id})`)
+      consola('$aggbot', `grupo detectado: ${info.subject}`)
 
       // Entra al grupo
       await sock.groupAcceptInvite(codigo)
-      log(`✅ Entré a ${info.subject}`)
+      consola('$aggbot', `ingresó a ${info.subject}`)
 
-      await sock.sendMessage(jid, { text: `✅ Ya entré al grupo *${info.subject}* 🤖` }, { quoted: message })
+      await sock.sendMessage(jid, { text: whatsapp('🎫', `Entré al grupo ${info.subject}`) }, { quoted: message })
     } catch (error) {
-      log(`❌ Error: ${error.message}`)
-      await sock.sendMessage(jid, { text: `❌ No pude entrar al grupo: ${error.message}` }, { quoted: message })
+      consola('$aggbot', error.message, false)
+      await sock.sendMessage(jid, { text: whatsapp('🍒', `No pude entrar al grupo: ${error.message}`) }, { quoted: message })
     }
   }
 }

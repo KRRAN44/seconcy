@@ -1,6 +1,6 @@
 const fs = require('fs')
 
-const log = (...args) => console.log('[EXIT]', ...args)
+const { consola, whatsapp } = require('../decoracion')
 
 // Saca el texto del mensaje (normal, respuesta o pie de foto)
 function obtenerTexto(message) {
@@ -22,7 +22,7 @@ module.exports = {
 
     // Sin link de grupo, no hace nada
     if (!match) {
-      await sock.sendMessage(jid, { text: '⚠️ Mándame un link de grupo de WhatsApp: *$exit https://chat.whatsapp.com/xxxx*' }, { quoted: message })
+      await sock.sendMessage(jid, { text: whatsapp('🌊', 'Envía un enlace de grupo con $exit') }, { quoted: message })
       return
     }
 
@@ -31,16 +31,16 @@ module.exports = {
     try {
       // Con el código del link saca la info del grupo (incluye su ID)
       const info = await sock.groupGetInviteInfo(codigo)
-      log(`🔎 Grupo detectado: ${info.subject} (${info.id})`)
+      consola('$exit', `grupo detectado: ${info.subject}`)
 
       // Solo se sale del grupo
       await sock.groupLeave(info.id)
-      log(`🚪 Salí de ${info.id}`)
+      consola('$exit', `salió de ${info.subject}`)
 
-      await sock.sendMessage(jid, { text: `🚪 Salí del grupo *${info.subject}* ✅` }, { quoted: message })
+      await sock.sendMessage(jid, { text: whatsapp('🍒', `Salí del grupo ${info.subject}`) }, { quoted: message })
     } catch (error) {
-      log(`❌ Error: ${error.message}`)
-      await sock.sendMessage(jid, { text: `❌ No pude salir del grupo: ${error.message}` }, { quoted: message })
+      consola('$exit', error.message, false)
+      await sock.sendMessage(jid, { text: whatsapp('🍓', `No pude salir del grupo: ${error.message}`) }, { quoted: message })
     }
   }
 }

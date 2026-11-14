@@ -21,6 +21,8 @@
 *$change (XXX)* : `Cambia el texto que se enviara`
 *$cat* : `Muestra almacenamiento del json`
 
+*$catcont* : `Muestra texto a enviar`
+
 *$aggbot (link)* : `El bot entra al grupo`
 *$exit (link)* : `El bot sale del grupo`
 *———-* *-*

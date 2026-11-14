@@ -4,6 +4,7 @@ const path = require('path')
 const DESTINO = '4915124477722@s.whatsapp.net'
 const CARPETA_CONTENIDO = path.join(__dirname, 'recursos')
 const ARCHIVOS_IMAGEN = new Set(['.jpg', '.jpeg', '.png', '.webp'])
+const { consola } = require('./decoracion')
 
 function leerContenidoInicio() {
   const rutaTexto = path.join(CARPETA_CONTENIDO, 'text.txt')
@@ -39,9 +40,9 @@ module.exports = function configurarAvisoInicial(sock) {
       const contenido = leerContenidoInicio()
       await sock.sendMessage(DESTINO, contenido)
       enviado = true
-      console.log('✅ Texto e imagen de inicio enviados al destino.')
+      consola('$inicio', 'texto e imagen enviados al destino')
     } catch (error) {
-      console.error('❌ No se pudo enviar el aviso inicial:', error)
+      consola('$inicio', `no se pudo enviar el aviso: ${error.message}`, false)
       envioEnCurso = false
     }
   })
