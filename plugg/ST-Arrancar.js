@@ -1,8 +1,14 @@
+// ======================================================
+// $ST480 - detiene lo que arrancó $480 y lo anota en actividad.json
+// para que al reiniciar el bot NO se reanude solo.
+// ======================================================
+const { actualizarActividad } = require('../actividad')
+
 module.exports = {
   name: 'st480',
   async execute(ctx) {
     const { commands, message } = ctx
-    const quien = message.key.participant || message.key.remoteJid
+    const quien = message?.key?.participant || message?.key?.remoteJid || 'reinicio automático'
     console.log(`[480] 📥 $ST480 recibido de ${quien}`)
 
     for (const nombre of ['st202', 'st404']) {
@@ -18,6 +24,14 @@ module.exports = {
       } catch (error) {
         console.log(`[480] ❌ Error en $${nombre}: ${error.message}`)
       }
+    }
+
+    // Anotar que ya no debe reanudarse solo
+    try {
+      actualizarActividad(a => ({ ...a, activo: false, detenidoEn: new Date().toISOString() }))
+      console.log('[480] 💾 actividad.json guardado (activo: false)')
+    } catch (error) {
+      console.log(`[480] ❌ No se pudo guardar actividad.json: ${error.message}`)
     }
   }
 }

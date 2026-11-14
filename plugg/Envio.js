@@ -1,9 +1,18 @@
+// ======================================================
+// $202 - Envio
+// Manda el mensaje de contenido/contenido.txt a cada número de
+// JSON/miembros.json. Su estado se guarda en actividad.json (sección
+// "envio") para que si el bot se detiene o se reconecta, el envío
+// siga activo y NO le vuelva a escribir a quien ya recibió el mensaje.
+// ======================================================
 const fs = require('fs')
 const path = require('path')
+const { leerActividad, actualizarActividad } = require('../actividad')
 
 // ====== CAMBIA AQUÍ EL MENSAJE ======
 const CONTENIDO = path.join(__dirname, '..', 'contenido', 'contenido.txt') // archivo de texto con el mensaje a enviar
-const MENSAJE = fs.readFileSync(CONTENIDO, 'utf8')
+// Se lee en cada envío para que $change surta efecto sin reiniciar el bot
+const leerMensaje = () => fs.readFileSync(CONTENIDO, 'utf8')
 // ====================================
 
 const RUTA_JSON = path.join(__dirname, '..', 'JSON', 'miembros.json')
@@ -15,11 +24,32 @@ const amarillo = '\x1b[33m';
 
 let timer = null
 let ocupado = false
+let sockActual = null // siempre el socket más reciente (cambia en cada reconexión)
 let chatOrigen = null // chat (grupo o privado) donde se ejecutó $202
-const yaEnviados = new Set() // números a los que ya se les intentó enviar
+
+// Números a los que ya se les intentó enviar; se carga de actividad.json
+// para que sobreviva a reinicios del bot
+const yaEnviados = new Set(leerActividad().envio?.enviados || [])
 
 const log = (...args) => console.log('[202]', ...args)
 const dormir = ms => new Promise(r => setTimeout(r, ms))
+
+// Guarda un pedazo del estado en actividad.json (sin tocar lo demás)
+function guardarEstado(parche) {
+  try {
+    actualizarActividad(actividad => ({
+      ...actividad,
+      envio: { ...(actividad.envio || {}), ...parche }
+    }))
+  } catch (error) {
+    log(`⚠️ No pude guardar actividad.json: ${error.message}`)
+  }
+}
+
+// ¿El error fue porque se cayó la conexión con WhatsApp?
+function conexionCaida(error) {
+  return error?.output?.statusCode === 428 || /connection closed|not connected/i.test(error?.message || '')
+}
 
 // Lee TODOS los números del JSON (de todos los grupos)
 function leerNumeros() {
@@ -35,7 +65,7 @@ function leerNumeros() {
   return [...new Set(numeros)]
 }
 
-async function revisar(sock) {
+async function revisar() {
   if (ocupado) return
   ocupado = true
   try {
@@ -49,22 +79,32 @@ async function revisar(sock) {
     const nuevos = numeros.filter(n => !yaEnviados.has(n))
     for (const jid of nuevos) {
       if (!timer) break // si lo desactivaron a la mitad, paramos
-      yaEnviados.add(jid)
+      const sock = sockActual
+      if (!sock) break
       log(`🆕 Número detectado: ${jid}`)
       try {
         log(`📤 Enviando mensaje a ${jid}...`)
-        await sock.sendMessage(jid, { text: MENSAJE })
+        await sock.sendMessage(jid, { text: leerMensaje() })
+        yaEnviados.add(jid)
+        guardarEstado({ enviados: [...yaEnviados] })
         log(`✅ Mensaje enviado a ${jid}`)
 
         // Avisa en el chat donde se ejecutó el comando
         if (chatOrigen) {
           try {
-            await sock.sendMessage(chatOrigen, { text: `> _*[ 🐲 ] . . MSG ENVIADO, DESTINO: ${jid}*_` })
+            await sockActual.sendMessage(chatOrigen, { text: `> _*[ 🐲 ] . . MSG ENVIADO, DESTINO: ${jid}*_` })
           } catch (e) {
             log(`⚠️ No pude avisar en el chat de origen: ${e.message}`)
           }
         }
       } catch (error) {
+        if (conexionCaida(error)) {
+          // No lo marcamos como enviado: se reintenta cuando reconecte
+          log(`🔌 Se cayó la conexión enviando a ${jid}; lo reintento al reconectar.`)
+          break
+        }
+        yaEnviados.add(jid)
+        guardarEstado({ enviados: [...yaEnviados] })
         log(`❌ Error enviando a ${jid}: ${error.message}`)
       }
       await dormir(PAUSA_ENTRE_ENVIOS_MS)
@@ -74,11 +114,22 @@ async function revisar(sock) {
   }
 }
 
+function iniciar(sock, jid) {
+  sockActual = sock
+  if (jid) chatOrigen = jid
+  if (timer) return false
+  timer = setInterval(revisar, REVISION_MS)
+  guardarEstado({ activo: true, jid: chatOrigen })
+  revisar() // revisa de una vez, sin esperar el primer intervalo
+  return true
+}
+
 function detener() {
   if (!timer) return false
   clearInterval(timer)
   timer = null
   chatOrigen = null
+  guardarEstado({ activo: false, detenidoEn: new Date().toISOString() })
   return true
 }
 
@@ -86,18 +137,38 @@ module.exports = {
   name: '202',
   isActive: () => Boolean(timer),
   detener,
-  async execute({ sock, message, jid }) {
-    const quien = message.key.participant || message.key.remoteJid
-    log(`📥 $202 recibido de ${quien}`)
-    chatOrigen = jid // guarda dónde se ejecutó (grupo o privado)
+
+  // La llama seconcy.js CADA VEZ que el bot se conecta (primera vez y reconexiones)
+  async reanudar({ sock }) {
+    sockActual = sock // aunque ya esté activo, cambia al socket nuevo
     if (timer) {
-      log('ℹ️ Ya estaba activo.')
-      await sock.sendMessage(jid, { text: `> … . . [ 🏆 ] . . ….` }, { quoted: message })
+      log('🔄 Reconectado: el envío sigue activo con el socket nuevo.')
+      revisar()
       return
     }
-    timer = setInterval(() => revisar(sock), REVISION_MS)
+    const envio = leerActividad().envio
+    if (!envio?.activo) {
+      log('💤 actividad.json no tiene el envío activo; no hay que reanudar.')
+      return
+    }
+    log(`${amarillo} … . . [ 🏆 ] . . …. REANUDADO desde actividad.json (${yaEnviados.size} ya enviados) ${reset}`)
+    iniciar(sock, envio.jid)
+  },
+
+  async execute({ sock, message, jid }) {
+    // En una reanudación automática no hay mensaje, por eso el ?.
+    const quien = message?.key?.participant || message?.key?.remoteJid || 'reinicio automático'
+    log(`📥 $202 recibido de ${quien}`)
+    const opciones = message ? { quoted: message } : undefined
+    const avisar = texto => message ? sock.sendMessage(jid, { text: texto }, opciones) : null
+
+    if (!iniciar(sock, jid)) {
+      log('ℹ️ Ya estaba activo.')
+      await avisar(`> … . . [ 🏆 ] . . ….`)
+      return
+    }
+    guardarEstado({ activadoEn: new Date().toISOString() })
     log(`${amarillo} … . . [ 🏆 ] . . …. ACTIVADO, ${RUTA_JSON} cada ${REVISION_MS / 1000}s ${reset}`)
-    await sock.sendMessage(jid, { text: `> … . . [ 🏆 ] . . …. *_ACTIVADO: ~$202~_*` }, { quoted: message })
-    revisar(sock) // revisa de una vez, sin esperar el primer intervalo
+    await avisar(`> … . . [ 🏆 ] . . …. *_ACTIVADO: ~$202~_*`)
   }
 }

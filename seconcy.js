@@ -438,6 +438,15 @@ async function startBot(phoneNumber) {
           `✅ ${TAG} Bot conectado a WhatsApp.`
         )
         iniciarTransferenciaMiembros()
+        // Cada comando que tenga reanudar() (Envio $202, Arrancar $480) lo
+        // recibe en CADA conexión: si estaba activo en actividad.json se
+        // reanuda solo, y si ya corría se queda con el socket nuevo.
+        for (const comando of new Set(commands.values())) {
+          if (typeof comando.reanudar !== 'function') continue
+          Promise.resolve(comando.reanudar({ sock, commands })).catch(error => {
+            console.error(`❌ No se pudo reanudar $${comando.name}:`, error)
+          })
+        }
       }
       // ------------------------------------------------
       // CONEXIÓN CERRADA
