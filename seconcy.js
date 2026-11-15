@@ -65,11 +65,11 @@ function loadCommands() {
   for (const folder of commandFolders) {
     readFolder(path.join(__dirname, folder))
   }
-  console.log(`┗━━╸╸╸╸╸╸╸╸╸╸╸╸╸╸╸╯🎍╭͢`)
+  console.log(`         🎍╭͢`)
   console.log(
-    `𝜢𝜮𝑪𝜢𝜣,${commands.size}  𝑪𝜣𝜧𝜟𝜨𝑫𝜣𝑺 𝑪𝜟𝑹𝑮𝜟𝑫𝜣𝑺 𝑪𝜣𝜨 𝜮𝜩𝜤𝜪𝜣`
+    `SECONCY CARGADO,${commands.size} COMANDOS DISPONIBLES`
   )
-  console.log(`┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈`)
+  console.log(`                       🎍╰͢`)
   return commands
 }
 const commands = loadCommands()

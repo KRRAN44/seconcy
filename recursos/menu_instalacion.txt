@@ -1,0 +1,8 @@
+             ╭─────────────────────────────────────────╮
+             |  [ 1 ] : INICIAR BOT                    |
+             |  [ 2 ] : INICIAR PM2                    |
+             |  [ 3 ] : BORRAR SESION Y PM2            |
+             |  [ 4 ] : INICIAR OTRA SESION            |
+             |  [ 5 ] : BORRAR SESION 2                |
+             ╰─────────────────────────────────────────╯
+
