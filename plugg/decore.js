@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 
-const FOTO_PATH = path.join(__dirname, '..', 'recursos', 'IMG_2585.jpg')
+const FOTO_PATH = path.join(__dirname, '..', 'contenido', 'IMG_2585.jpeg')
 const NOMBRE_PATH = path.join(__dirname, '..', 'recursos', 'nombre.txt')
 const { consola, whatsapp } = require('../decoracion')
 
