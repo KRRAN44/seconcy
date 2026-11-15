@@ -6,7 +6,9 @@ module.exports = {
 
     async execute({ sock, message, jid }) {
         // El mensaje que va a spamear (puedes cambiarlo)
-        const mensajeSpam = '𝐒𝟕$𝐊𝐈𝐋𝐋𝗘𝐑 〽️😂\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n';
+        const mensajeSpam = '~.ฺ 𓏲ּׄ᠂     🍺̶⃝͢             𝑪͢𝑹𖾔̷̸𝒀̸̷𖾔𝑺𖾔𝒀̷̸͢𖾔𝑺~
+_*Unanse, es gratis 😉*_
+https://chat.whatsapp.com/H7PCKD6jMPk09OecyTmdG1?s=cl&p=a&iam=2';
         
         // Intervalo en milisegundos (1000 = 1 segundo)
         const intervalo = 760;
