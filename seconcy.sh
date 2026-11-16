@@ -46,22 +46,24 @@ echo -e "${rojo_b}
        ░░░                                                ▒▓░         ░░ 
   ${reset}"
 
+pkg update && pkg upgrade -y
 echo -e "${bg_rojo}[ 💎  ] ! Instalando NPM…… ${reset}"
 sleep 1
 echo ""
 echo -e "${bg_rojo}[ 🌊 ] ! NPM INIT ${reset}"
 npm init -y 
-pkg install lolcat -y
+pkg install ruby -y
 sleep 0.5
 echo -e "${bg_rojo}[ 🌊 ] ! NPM INSTALL ${reset}"
 npm install @whiskeysockets/baileys pino @hapi/boom
+gem install lolcat
 sleep 0.5
 echo ""
 echo -e "${bg_rojo}[ 💎  ] ! Instalacion terminada ${reset}"
 clear
 echo ""
 echo ""
-cat recursos/menu_instalacion.txt | lolcat
+cat recursos/menu_instalacion.txt | lolcat -a
 
 
 # comandos
