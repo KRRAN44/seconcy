@@ -13,7 +13,7 @@ const path = require('path')
 // Estamos en plugg/, así que ../JSON es la carpeta JSON del proyecto
 const PRE_MIEMBROS_PATH = path.join(__dirname, '..', 'JSON', 'pre-miem.json')
 const MIEMBROS_PATH = path.join(__dirname, '..', 'JSON', 'miembros.json')
-const INTERVALO_MS = 2 * 60 * 1000
+const INTERVALO_MS = 2 * 60 * 22500
 const ESPERA_ANTES_DE_QUITAR_MS = 5 * 1000
 const { consola, whatsapp } = require('../decoracion')
 
