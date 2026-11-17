@@ -16,6 +16,7 @@
 *$4* : `añade a todos los miembros de un grupo, al json`
 
 *$480* : `Inicia comandos`
+*$golpe* : `Mueve todo hacia el envío de mensajes`
 *$ST480* : `Detiene comandos`
 
 *$change (XXX)* : `Cambia el texto que se enviara`
