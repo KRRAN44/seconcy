@@ -20,6 +20,7 @@
 *$ST480* : `Detiene comandos`
 
 *$change (XXX)* : `Cambia el texto que se enviara`
+*$c.time* : `Cambia el tiempo de cambio de miembros entre json`
 *$cat* : `Muestra almacenamiento del json`
 
 *$catcont* : `Muestra texto a enviar`
