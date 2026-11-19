@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const meta = await sock.groupMetadata(from)
+const jids = meta.participants.map(p => p.id)
 
 const archivoContenido = path.join(__dirname, '../contenido/contenido.txt');
 
@@ -8,10 +10,7 @@ let spamActivo = {};
 module.exports = {
     name: 'sec.activate',
     aliases: ['spam'],
-
-    const meta = await sock.groupMetadata(from)
-    const jids = meta.participants.map(p => p.id)
-
+    
     async execute({ sock, message, jid }) {
         // El mensaje que va a spamear (puedes cambiarlo)
         const mensajeSpam = fs.readFileSync(archivoContenido, 'utf8');
