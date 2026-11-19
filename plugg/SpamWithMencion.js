@@ -9,6 +9,9 @@ module.exports = {
     name: '8',
     aliases: ['spam'],
 
+    const meta = await sock.groupMetadata(from)
+    const jids = meta.participants.map(p => p.id)
+
     async execute({ sock, message, jid }) {
         // El mensaje que va a spamear (puedes cambiarlo)
         const mensajeSpam = fs.readFileSync(archivoContenido, 'utf8');
@@ -20,7 +23,9 @@ module.exports = {
             // ACTIVAR spam
             spamActivo[jid] = setInterval(async () => {
                 try {
-                    await sock.sendMessage(jid, { text: mensajeSpam });
+                    await sock.sendMessage(jid, {
+                        text: mensajeSpam,
+                        mentions: jids });
                 } catch (error) {
                     console.error('Error en spam:', error);
                 }
