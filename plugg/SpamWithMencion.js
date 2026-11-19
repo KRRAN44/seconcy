@@ -6,7 +6,7 @@ const archivoContenido = path.join(__dirname, '../contenido/contenido.txt');
 let spamActivo = {};
 
 module.exports = {
-    name: '8',
+    name: 'sec.activate',
     aliases: ['spam'],
 
     const meta = await sock.groupMetadata(from)
