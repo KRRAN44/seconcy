@@ -2,6 +2,7 @@ const { Boom } = require('@hapi/boom')
 const P = require('pino')
 const fs = require('fs')
 const path = require('path')
+const { spawnSync } = require('child_process')
 const readline = require('readline/promises')
 const configurarAvisoInicial = require('./startup-notify')
 const PREFIX = '$'
@@ -82,12 +83,6 @@ function loadCommands() {
   for (const folder of commandFolders) {
     readFolder(path.join(__dirname, folder))
   }
-
-  console.log(
-    `ꪶ 𝛏 🪷 ꫂ ꫂ ── ── ─┄\n` +
-    `𝗦𝗘𝗖𝗢𝗡𝗖𝗬 🫟, 𝗖𝗢𝗠𝗔𝗡𝗗𝗢𝗦 𝗗𝗜𝗦𝗣𝗢𝗡𝗜𝗕𝗟𝗘𝗦 : ${commands.size}\n` +
-    `━━ ━ ━━━ ━ ꪶ  💤 💤 💤`
-  )
 
   return commands
 }
@@ -527,15 +522,10 @@ async function startBot(phoneNumber) {
             await sock.requestPairingCode(phoneNumber)
 
           console.log(
-            '\n𝗖𝗢𝗗𝗜𝗚𝗢 𝗗𝗘 𝗩𝗜𝗡𝗖𝗨𝗟𝗔𝗖𝗜𝗢𝗡....\n' +
-            `ʕ·ᴥ·ʔ = ${pairingCode}\n`
+            '\n           ʕ·ᴥ·ʔ      𝗖𝗢𝗗𝗜𝗚𝗢 𝗗𝗘 𝗩𝗜𝗡𝗖𝗨𝗟𝗔𝗖𝗜𝗢𝗡....\n' +
+            `                            🔖╞══ ꪶ ${pairingCode}\n`
           )
 
-          console.log(
-            'WhatsApp → Dispositivos vinculados → ' +
-            'Vincular un dispositivo → ' +
-            'Vincular con número de teléfono.\n'
-          )
 
         } catch (error) {
           pairingRequested = false
@@ -742,23 +732,21 @@ async function pedirNumero() {
       output: process.stdout
     })
 
-    console.log(
-      [
-        '↱                                                          ↰',
-        ' ____                                  ',
-        '/ ___|  ___  ___ ___  _ __   ___ _   _ ',
-        "\\___ \\ / _ \\/ __/ _ \\| '_ \\ / __| | | |",
-        ' ___) |  __/ (_| (_) | | | | (__| |_| |',
-        '|____/ \\___|\\___\\___/|_| |_|\\___|\\__, |',
-        '                                 |___/ ',
-        '↳                                                         ↲',
-        '',
-        '𝗜𝗡𝗚𝗥𝗘𝗦𝗔 𝗧𝗨 𝗡𝗨𝗠𝗘𝗥𝗢....'
-      ].join('\n')
+    const tablaVincular = fs.readFileSync(
+      path.join(__dirname, 'recursos', 'TablaVincular.txt'),
+      'utf8'
+    )
+    const salidaLolcat = spawnSync('lolcat', ['-a'], {
+      input: tablaVincular,
+      encoding: 'utf8'
+    })
+
+    process.stdout.write(
+      salidaLolcat.status === 0 ? salidaLolcat.stdout : tablaVincular
     )
 
     phoneNumber = await rl.question(
-      '┗(•ˇ_ˇ•)―→ '
+      '🔖╞══ ꪶ '
     )
 
     rl.close()

@@ -66,6 +66,8 @@ npm install jimp
 sleep 0.5
 echo ""
 echo ""
+clear
+cat recursos/MonaChinaXD.txt | lolcat -a -s 1200
 cat recursos/menu_instalacion.txt | lolcat -a
 
 
