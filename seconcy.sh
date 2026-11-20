@@ -89,3 +89,18 @@ node seconcy.js
   rm -rf auth_info_seconcy2
   pm2 delete seconcy2
 }
+
+ModoLite() {
+  echo -e "${bg_rojo}[ 🪼 ] ACTIVANDO MODO LITE..... ${reset}"
+  rm -rf decore 
+  rm actividad.js
+  rm actividad.json
+  mkdir CarpetaTemporal
+  mv plugg/Ping.js CarpetaTemporal
+  mv plugg/Añadir-pre-miem.js CarpetaTemporal
+  mv plugg/exit.js CarpetaTemporal
+  mv plugg/Mostrar-json.js CarpetaTemporal
+  rm -rf plugg
+  mv CarpetaTemporal plugg
+  echo -e "${bg_rojo}[ 🪼 ] MODO LITE HECHO..... ${reset}"
+}
