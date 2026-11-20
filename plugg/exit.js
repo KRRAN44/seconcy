@@ -17,6 +17,19 @@ function obtenerTexto(message) {
 module.exports = {
   name: 'exit',
   async execute({ sock, message, jid }) {
+    if (jid?.endsWith('@g.us')) {
+      try {
+        await sock.groupLeave(jid)
+        consola('$exit', `salió del grupo ${jid}`)
+      } catch (error) {
+        consola('$exit', error.message, false)
+        await sock.sendMessage(jid, {
+          text: whatsapp('🍓', `No pude salir del grupo: ${error.message}`)
+        }, { quoted: message })
+      }
+      return
+    }
+
     const texto = obtenerTexto(message)
     const match = texto.match(/chat\.whatsapp\.com\/([A-Za-z0-9]{20,24})/)
 

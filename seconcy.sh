@@ -61,6 +61,9 @@ sleep 0.5
 echo ""
 echo -e "${bg_rojo}[ 💎  ] ! Instalacion terminada ${reset}"
 clear
+echo -e "${bg_rojo}[ 🌊 ] ! NPM INSTALL JIMP ${reset}"
+npm install jimp
+sleep 0.5
 echo ""
 echo ""
 cat recursos/menu_instalacion.txt | lolcat -a
